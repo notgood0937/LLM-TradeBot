@@ -66,6 +66,7 @@ from src.risk.manager import RiskManager
 from src.utils.logger import log, setup_logger
 from src.utils.trade_logger import trade_logger
 from src.utils.data_saver import DataSaver
+from src.utils.telegram_notifier import TelegramNotifier
 from src.data.processor import MarketDataProcessor  # ✅ Corrected Import
 from src.exchanges import AccountManager, ExchangeAccount, ExchangeType  # ✅ Multi-Account Support
 from src.features.technical_features import TechnicalFeatureEngineer
@@ -175,6 +176,9 @@ class MultiAgentTradingBot:
         print("="*80)
         
         self.config = Config()
+        self.telegram_notifier = TelegramNotifier.from_config(self.config)
+        if self.telegram_notifier.is_ready():
+            log.info("📨 Telegram notifier enabled")
         
         # 多币种支持: 优先级顺序
         # 1. 环境变量 TRADING_SYMBOLS (来自 .env，Dashboard 设置会更新这个)
@@ -3246,6 +3250,64 @@ class MultiAgentTradingBot:
         global_state.add_log(f"[⚖️ {decision_label}] Action={vote_result.action.upper()} | Conf={decision_payload.get('confidence', 0)}%")
 
         self.saver.save_decision(asdict(vote_result), self.current_symbol, snapshot_id, cycle_id=cycle_id)
+        self._notify_telegram_decision(
+            decision_payload=decision_payload,
+            decision_source=decision_source,
+            cycle_id=cycle_id
+        )
+
+    def _format_telegram_decision_message(
+        self,
+        *,
+        decision_payload: Dict[str, Any],
+        decision_source: str,
+        cycle_id: Optional[str]
+    ) -> Optional[str]:
+        if decision_source != 'llm':
+            return None
+        action = str(decision_payload.get('action', 'wait') or 'wait').upper()
+        try:
+            conf_val = float(decision_payload.get('confidence', 0) or 0)
+        except (TypeError, ValueError):
+            conf_val = 0.0
+        pos_pct = decision_payload.get('position_size_pct', 0)
+        bull = decision_payload.get('bull_perspective', {}) or {}
+        bear = decision_payload.get('bear_perspective', {}) or {}
+        reason = str(decision_payload.get('reasoning', '') or '').strip()
+        if len(reason) > 400:
+            reason = reason[:397] + "..."
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        lines = [
+            "🤖 LLM Final Decision",
+            f"Symbol: {self.current_symbol}",
+            f"Time: {timestamp}",
+            f"Cycle: {cycle_id}" if cycle_id is not None else "Cycle: N/A",
+            f"Action: {action}",
+            f"Confidence: {conf_val:.1f}%",
+            f"Position Size: {pos_pct:.1f}%",
+            f"Bull: {bull.get('stance', 'UNKNOWN')} ({bull.get('bull_confidence', 50)}%)",
+            f"Bear: {bear.get('stance', 'UNKNOWN')} ({bear.get('bear_confidence', 50)}%)",
+            f"Reason: {reason or 'N/A'}"
+        ]
+        return "\n".join(lines)
+
+    def _notify_telegram_decision(
+        self,
+        *,
+        decision_payload: Dict[str, Any],
+        decision_source: str,
+        cycle_id: Optional[str]
+    ) -> None:
+        if not self.telegram_notifier or not self.telegram_notifier.is_ready():
+            return
+        message = self._format_telegram_decision_message(
+            decision_payload=decision_payload,
+            decision_source=decision_source,
+            cycle_id=cycle_id
+        )
+        if message:
+            self.telegram_notifier.send_message_async(message)
 
     def _handle_passive_decision(
         self,

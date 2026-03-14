@@ -43,7 +43,7 @@ class Config:
     def _override_from_env(self):
         """从环境变量覆盖配置"""
         # Initialize sections if missing
-        for section in ['binance', 'deepseek', 'redis']:
+        for section in ['binance', 'deepseek', 'redis', 'telegram']:
             if section not in self._config or self._config[section] is None:
                 self._config[section] = {}
 
@@ -99,6 +99,15 @@ class Config:
         base_url = os.getenv('ANTHROPIC_BASE_URL') or os.getenv('LLM_BASE_URL')
         if base_url:
             self._config['llm']['base_url'] = base_url
+
+        # Telegram notification
+        telegram_enabled = os.getenv('TELEGRAM_ENABLED')
+        if telegram_enabled is not None:
+            self._config['telegram']['enabled'] = telegram_enabled.lower() in ('1', 'true', 'yes', 'on')
+        if os.getenv('TELEGRAM_BOT_TOKEN'):
+            self._config['telegram']['bot_token'] = os.getenv('TELEGRAM_BOT_TOKEN')
+        if os.getenv('TELEGRAM_CHAT_ID'):
+            self._config['telegram']['chat_id'] = os.getenv('TELEGRAM_CHAT_ID')
     
     def get(self, key_path: str, default=None):
         """
@@ -146,6 +155,10 @@ class Config:
     @property
     def llm(self):
         return self._config.get('llm', {})
+
+    @property
+    def telegram(self):
+        return self._config.get('telegram', {})
 
 
 # 全局配置实例

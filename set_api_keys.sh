@@ -22,6 +22,8 @@ echo "  3. 在文件末尾添加："
 echo "     export BINANCE_API_KEY=\"your_api_key_here\""
 echo "     export BINANCE_API_SECRET=\"your_api_secret_here\""
 echo "     export DEEPSEEK_API_KEY=\"your_deepseek_key_here\""
+echo "     export TELEGRAM_BOT_TOKEN=\"your_telegram_bot_token_here\""
+echo "     export TELEGRAM_CHAT_ID=\"your_telegram_chat_id_here\""
 echo "  4. 保存并运行：source ~/.zshrc"
 echo ""
 echo "=================================================="
@@ -50,6 +52,18 @@ if [ -n "$DEEPSEEK_API_KEY" ]; then
     echo "✅ DEEPSEEK_API_KEY 已设置: ${DEEPSEEK_API_KEY:0:15}...${DEEPSEEK_API_KEY: -10}"
 else
     echo "⚠️  DEEPSEEK_API_KEY 未设置（仅影响 LLM 功能）"
+fi
+
+if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+    echo "✅ TELEGRAM_BOT_TOKEN 已设置: ${TELEGRAM_BOT_TOKEN:0:10}...${TELEGRAM_BOT_TOKEN: -6}"
+else
+    echo "⚠️  TELEGRAM_BOT_TOKEN 未设置（仅影响 Telegram 通知）"
+fi
+
+if [ -n "$TELEGRAM_CHAT_ID" ]; then
+    echo "✅ TELEGRAM_CHAT_ID 已设置: ${TELEGRAM_CHAT_ID}"
+else
+    echo "⚠️  TELEGRAM_CHAT_ID 未设置（仅影响 Telegram 通知）"
 fi
 
 echo ""

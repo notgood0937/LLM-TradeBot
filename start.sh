@@ -36,32 +36,31 @@ fi
 print_info "Activating virtual environment..."
 source "$VENV_DIR/bin/activate"
 
-# Check .env file
+# Check .env file (preferred)
 if [ ! -f ".env" ]; then
-    print_error ".env file not found"
-    print_info "Please create .env file with your API keys"
-    exit 1
+    print_warning ".env file not found - will rely on config.yaml"
+else
+    # Check required environment variables
+    print_info "Checking environment variables..."
+    source .env
+
+    MISSING_VARS=()
+    [ -z "$BINANCE_API_KEY" ] && MISSING_VARS+=("BINANCE_API_KEY")
+    [ -z "$BINANCE_SECRET_KEY" ] && MISSING_VARS+=("BINANCE_SECRET_KEY")
+    [ -z "$DEEPSEEK_API_KEY" ] && MISSING_VARS+=("DEEPSEEK_API_KEY")
+    [ -z "$TELEGRAM_BOT_TOKEN" ] && MISSING_VARS+=("TELEGRAM_BOT_TOKEN")
+    [ -z "$TELEGRAM_CHAT_ID" ] && MISSING_VARS+=("TELEGRAM_CHAT_ID")
+
+    if [ ${#MISSING_VARS[@]} -gt 0 ]; then
+        print_warning "Missing environment variables in .env:"
+        for var in "${MISSING_VARS[@]}"; do
+            echo "  - $var"
+        done
+        print_info "Continuing anyway (will fallback to config.yaml where applicable)"
+    else
+        print_success "Environment variables OK"
+    fi
 fi
-
-# Check required environment variables
-print_info "Checking environment variables..."
-source .env
-
-MISSING_VARS=()
-[ -z "$BINANCE_API_KEY" ] && MISSING_VARS+=("BINANCE_API_KEY")
-[ -z "$BINANCE_SECRET_KEY" ] && MISSING_VARS+=("BINANCE_SECRET_KEY")
-[ -z "$DEEPSEEK_API_KEY" ] && MISSING_VARS+=("DEEPSEEK_API_KEY")
-
-if [ ${#MISSING_VARS[@]} -gt 0 ]; then
-    print_error "Missing required environment variables:"
-    for var in "${MISSING_VARS[@]}"; do
-        echo "  - $var"
-    done
-    print_info "Please edit .env file and add missing keys"
-    exit 1
-fi
-
-print_success "Environment variables OK"
 
 # Parse arguments
 MODE_OVERRIDE=""
