@@ -25,6 +25,13 @@ llm:
   timeout: 120
   max_retries: 3
 
+# Telegram 通知配置
+telegram:
+  enabled: false
+  bot_token: "TELEGRAM_BOT_TOKEN"
+  chat_id: "TELEGRAM_CHAT_ID"
+  timeout: 10
+
 # 交易配置
 trading:
   symbols: ["BTCUSDT"]  # 默认只使用 BTC，可添加其他币种如 "ETHUSDT", "SOLUSDT"
