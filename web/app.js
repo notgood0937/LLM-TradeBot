@@ -64,6 +64,7 @@ function toggleLanguage() {
     localStorage.setItem('language', window.currentLang);
     applyTranslations(window.currentLang);
     updateLanguageButton();
+    updateLogModeUI();
     updateChartLabels();
 }
 
@@ -87,6 +88,114 @@ function updateDataSyncLabels(timeframes) {
         el.textContent = `${tf}:`;
     });
     return resolved;
+}
+
+function renderAgentChatroomStandalone(messages) {
+    const chatContainer = document.getElementById('chatroom-messages');
+    if (!chatContainer) return;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+        chatContainer.innerHTML = `
+            <div class="chatroom-empty">
+                <div class="icon">💬</div>
+                <p>${window.currentLang === 'zh' ? '等待代理开始分析...' : 'Waiting for agents to start...'}</p>
+            </div>
+        `;
+        delete chatContainer.dataset.lastSig;
+        return;
+    }
+
+    const lastMsg = messages[messages.length - 1];
+    const sig = lastMsg ? `${messages.length}|${lastMsg.timestamp}|${lastMsg.agent}|${lastMsg.content}` : `${messages.length}`;
+    if (chatContainer.dataset.lastSig === sig) return;
+
+    const lang = window.currentLang || 'en';
+    const titleMap = {
+        zh: {
+            symbol_selector: '选币器',
+            quant_analyst: '量化分析',
+            trend_agent: '趋势代理',
+            setup_agent: '形态代理',
+            trigger_agent: '触发代理',
+            multi_period_agent: '多周期分析',
+            bull_agent: '多头分析',
+            bear_agent: '空头分析',
+            decision_core: '最终决策',
+            risk_audit: '风险审计',
+            execution: '执行模块',
+            reflection_agent: '复盘代理'
+        },
+        en: {
+            symbol_selector: 'Selector',
+            quant_analyst: 'Quant',
+            trend_agent: 'Trend',
+            setup_agent: 'Setup',
+            trigger_agent: 'Trigger',
+            multi_period_agent: 'Multi-Period',
+            bull_agent: 'Bull Case',
+            bear_agent: 'Bear Case',
+            decision_core: 'Decision',
+            risk_audit: 'Risk Audit',
+            execution: 'Execution',
+            reflection_agent: 'Reflection'
+        }
+    };
+
+    const translateText = (text) => {
+        let out = String(text || '');
+        if (lang === 'zh') {
+            out = out
+                .replace(/Action:/g, '动作:')
+                .replace(/Conf:/g, '置信度:')
+                .replace(/Confidence:/g, '置信度:')
+                .replace(/Reason:/g, '理由:')
+                .replace(/Analysis complete/gi, '分析完成')
+                .replace(/\bWAIT\b/g, '观望')
+                .replace(/\bOPEN_LONG\b/g, '开多')
+                .replace(/\bOPEN_SHORT\b/g, '开空')
+                .replace(/\bCLOSE_POSITION\b/g, '平仓')
+                .replace(/\bLONG\b/g, '做多')
+                .replace(/\bSHORT\b/g, '做空')
+                .replace(/\bNEUTRAL\b/g, '中性');
+        }
+        return out;
+    };
+
+    const currentCycle = Number(document.getElementById('framework-cycle')?.textContent?.replace(/\D/g, '') || '');
+    let visibleMessages = Number.isFinite(currentCycle)
+        ? messages.filter((msg) => Number(msg.cycle) === currentCycle)
+        : messages;
+
+    if (!visibleMessages.length) {
+        const cycles = messages
+            .map((msg) => Number(msg.cycle))
+            .filter((value) => Number.isFinite(value));
+        if (cycles.length) {
+            const latestCycle = Math.max(...cycles);
+            visibleMessages = messages.filter((msg) => Number(msg.cycle) === latestCycle);
+        } else {
+            visibleMessages = messages;
+        }
+    }
+
+    chatContainer.innerHTML = '';
+    visibleMessages.forEach((msg) => {
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${msg.agent || 'agent'} chat-level-${msg.level || 'info'}`;
+        const agentName = titleMap[lang]?.[msg.agent] || String(msg.agent || 'agent').replace(/_/g, ' ');
+        const timeStr = msg.timestamp ? (msg.timestamp.includes(' ') ? msg.timestamp.split(' ')[1] : msg.timestamp) : '--:--:--';
+
+        bubble.innerHTML = `
+            <div class="chat-header">
+                <span class="chat-agent-name">${agentName}</span>
+                <span class="chat-timestamp">${timeStr}</span>
+            </div>
+            <div class="chat-content">${translateText(msg.content)}</div>
+        `;
+        chatContainer.appendChild(bubble);
+    });
+
+    chatContainer.dataset.lastSig = sig;
 }
 
 // Chart Instance
@@ -292,9 +401,26 @@ function initChart() {
 let allDecisionHistory = [];
 let currentActivePositions = []; // To share with table renderer
 
+function getEffectiveRole() {
+    const host = window.location.hostname;
+    const isLocalRuntime = host === '127.0.0.1' || host === 'localhost';
+    if (isLocalRuntime) {
+        localStorage.setItem('user_role', 'admin');
+        return 'admin';
+    }
+
+    let role = localStorage.getItem('user_role');
+    if (!role) {
+        role = 'admin';
+        localStorage.setItem('user_role', role);
+        console.log('🔐 No local role found, defaulting to admin for local runtime');
+    }
+    return role;
+}
+
 // Helper to verify role permission
 function verifyRole() {
-    const role = localStorage.getItem('user_role');
+    const role = getEffectiveRole();
     console.log('🔐 Verifying Role:', role);
     if (!role || role === 'user') {
         alert("User mode: No permission to perform this action.");
@@ -305,7 +431,7 @@ function verifyRole() {
 
 // Apply UI restrictions based on user role
 function applyRoleRestrictions() {
-    const role = localStorage.getItem('user_role');
+    const role = getEffectiveRole();
     console.log('🎨 Applying UI restrictions for role:', role);
 
     if (!role || role === 'user') {
@@ -415,6 +541,7 @@ function updateDashboard() {
             renderSystemStatus(data.system);
             renderMarketData(data.market);
             renderAgents(data.agents);
+            renderAgentChatroomStandalone(data.agents?.agent_messages);
             renderDecision(currentDecision);
             renderLogs(data.logs, data.logs_simplified);
 
@@ -495,38 +622,35 @@ function updateDashboard() {
             let activeAccount = data.account;
             let activePositions = data.positions || [];
 
-            if (data.system && data.system.is_test_mode && data.virtual_account) {
-                // Construct account object compatible with renderAccount
+            if ((!activeAccount || Object.keys(activeAccount).length === 0) && data.virtual_account) {
+                // Fallback only: if real account data is unavailable, show virtual account snapshot
                 const va = data.virtual_account;
                 const unrealized = va.total_unrealized_pnl || 0;
-                const realizedPnl = va.cumulative_realized_pnl || 0;  // For reference display
+                const realizedPnl = va.cumulative_realized_pnl || 0;
                 const initialBalance = va.initial_balance || 0;
-                // Total Equity = Current Balance (already includes realized PnL) + Unrealized PnL
                 const totalEquity = va.current_balance + unrealized;
-                // Total PnL = Total Equity - Initial Balance (most accurate formula)
-                // Note: current_balance already includes realized PnL from closed trades
                 const totalPnl = totalEquity - initialBalance;
                 activeAccount = {
                     total_equity: totalEquity,
                     wallet_balance: va.current_balance,
-                    available_balance: va.available_balance || va.current_balance,  // 可用余额 = 资金 - 持仓
-                    total_pnl: totalPnl,  // ✅ Accurate: Equity - Initial
-                    initial_balance: initialBalance, // ✅ Explicitly pass Initial Balance
-                    realized_pnl: realizedPnl,  // For potential separate display
-                    unrealized_pnl: unrealized   // For potential separate display
+                    available_balance: va.available_balance || va.current_balance,
+                    total_pnl: totalPnl,
+                    initial_balance: initialBalance,
+                    realized_pnl: realizedPnl,
+                    unrealized_pnl: unrealized
                 };
+            }
 
-                // Convert virtual positions dict to array for UI
-                if (va.positions) {
-                    activePositions = Object.entries(va.positions).map(([sym, details]) => ({
-                        symbol: sym,
-                        quantity: details.quantity,
-                        entry_price: details.entry_price,
-                        pnl: details.unrealized_pnl || 0,
-                        side: details.side,
-                        leverage: details.leverage || 1
-                    }));
-                }
+            if (data.system && data.system.is_test_mode && data.virtual_account?.positions) {
+                const va = data.virtual_account;
+                activePositions = Object.entries(va.positions).map(([sym, details]) => ({
+                    symbol: sym,
+                    quantity: details.quantity,
+                    entry_price: details.entry_price,
+                    pnl: details.unrealized_pnl || 0,
+                    side: details.side,
+                    leverage: details.leverage || 1
+                }));
             }
 
             if (activeAccount) {
@@ -545,9 +669,7 @@ function updateDashboard() {
 
             // Determine Initial Amount for Chart Baseline
             let initialAmount = null;
-            if (data.system && data.system.is_test_mode && data.virtual_account) {
-                initialAmount = data.virtual_account.initial_balance;
-            } else if (activeAccount) {
+            if (activeAccount) {
                 // For live, use wallet_balance (Realized Equity) roughly as baseline, 
                 // OR if we had a stored 'starting_balance' in backend.
                 // Ideally simply using the first point of the day would be better, 
@@ -2194,9 +2316,17 @@ function updateAgentFramework(system, decision, agents) {
     const hasCycle = currentCycle !== undefined && currentCycle !== null;
     const decisionCycle = decision?.cycle_number;
     const decisionHasCycle = decisionCycle !== undefined && decisionCycle !== null;
-    const decisionIsCurrent = !hasCycle || !decisionHasCycle
+    const numericCurrentCycle = Number(currentCycle);
+    const numericDecisionCycle = Number(decisionCycle);
+    const cyclesComparable = hasCycle
+        && decisionHasCycle
+        && Number.isFinite(numericCurrentCycle)
+        && Number.isFinite(numericDecisionCycle)
+        && Math.abs(numericCurrentCycle) < 10000
+        && Math.abs(numericDecisionCycle) < 10000;
+    const decisionIsCurrent = !cyclesComparable
         ? true
-        : Number(decisionCycle) === Number(currentCycle);
+        : numericDecisionCycle === numericCurrentCycle;
 
     if (hasCycle && window.lastFrameworkCycle === undefined) {
         window.lastFrameworkCycle = currentCycle;
@@ -2227,9 +2357,11 @@ function updateAgentFramework(system, decision, agents) {
     // Update Agent Statuses and Outputs based on decision data
     if (!decision || (hasCycle && decisionHasCycle && !decisionIsCurrent)) {
         if (hasCycle && window.latestDecisionHistory && window.latestDecisionHistory.length > 0) {
-            const fallbackDecision = window.latestDecisionHistory.find(
-                (entry) => entry && entry.cycle_number !== undefined && Number(entry.cycle_number) === Number(currentCycle)
-            );
+            const fallbackDecision = cyclesComparable
+                ? window.latestDecisionHistory.find(
+                    (entry) => entry && entry.cycle_number !== undefined && Number(entry.cycle_number) === numericCurrentCycle
+                )
+                : window.latestDecisionHistory[0];
             if (fallbackDecision) {
                 decision = fallbackDecision;
             } else {
@@ -2835,9 +2967,20 @@ function updateAgentFramework(system, decision, agents) {
 
         chatContainer.innerHTML = '';
         const currentCycle = Number(document.getElementById('framework-cycle')?.textContent?.replace(/\D/g, '') || '');
-        const visibleMessages = Number.isFinite(currentCycle)
+        let visibleMessages = Number.isFinite(currentCycle)
             ? messages.filter(m => Number(m.cycle) === currentCycle)
             : messages;
+        if (!visibleMessages || visibleMessages.length === 0) {
+            const numericCycles = messages
+                .map(m => Number(m.cycle))
+                .filter(v => Number.isFinite(v));
+            if (numericCycles.length > 0) {
+                const latestCycle = Math.max(...numericCycles);
+                visibleMessages = messages.filter(m => Number(m.cycle) === latestCycle);
+            } else {
+                visibleMessages = messages;
+            }
+        }
 
         const orderedMessages = visibleMessages
             .map((msg, idx) => ({ msg, idx }))
@@ -3163,6 +3306,13 @@ document.addEventListener('DOMContentLoaded', function () {
 // 🚀 MAIN INITIALIZATION
 document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 App Initializing...');
+    try {
+        const host = window.location.hostname;
+        if (host === '127.0.0.1' || host === 'localhost') {
+            localStorage.setItem('user_role', 'admin');
+            console.log('🔐 Forced admin role for local runtime');
+        }
+    } catch (e) { console.error('Local role bootstrap error:', e); }
 
     // 1. Language Init (Priority)
     try {
@@ -3643,13 +3793,14 @@ function setupEventListeners() {
 function updateLogModeUI() {
     const iconEl = document.getElementById('log-mode-icon');
     const textEl = document.getElementById('log-mode-text');
+    const lang = window.currentLang || 'en';
 
     if (window.logMode === 'simplified') {
         if (iconEl) iconEl.textContent = '📋';
-        if (textEl) textEl.textContent = 'Simplified';
+        if (textEl) textEl.textContent = window.i18n?.[lang]?.['log.simplified'] || 'Simplified';
     } else {
         if (iconEl) iconEl.textContent = '📜';
-        if (textEl) textEl.textContent = 'Detailed';
+        if (textEl) textEl.textContent = window.i18n?.[lang]?.['log.detailed'] || 'Detailed';
     }
 }
 

@@ -63,7 +63,7 @@ if [ "$BINANCE_OK" = true ] && [ "$DEEPSEEK_OK" = true ]; then
     echo "✓ 所有必需的 API 密钥已配置"
     echo ""
     echo "下一步："
-    echo "  python test.py  # 运行测试"
+    echo "  ./start.sh"
     echo ""
     exit 0
 else

@@ -4,293 +4,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM-TradeBot Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css?v=20260119_0300">
-    <link rel="stylesheet" href="/static/style-enhancements.css?v=20260222_1205">
+    <title>LLM-TradeBot Control Deck</title>
+    <link rel="stylesheet" href="/static/style.css?v=20260319_1515">
+    <link rel="stylesheet" href="/static/style-enhancements.css?v=20260319_1515">
     <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="./i18n.js"></script>
 </head>
 
-<body>
+<body class="editorial-mode">
     <!-- CRT Scanline Effect -->
     <div class="crt-overlay"></div>
 
-    <div class="container">
-        <!-- Header -->
-        <header class="glass-panel header">
-            <div class="logo">
-                <span class="icon">🤖</span>
-                <div class="logo-text">
-                    <h1>LLM-TradeBot</h1>
-                    <span class="tagline">Adversarial Decision Framework</span>
-                </div>
-                <div class="social-links">
-                    <a href="https://github.com/EthanAlgoX/LLM-TradeBot" target="_blank" title="GitHub"
-                        class="social-link github">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                            <path
-                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                        </svg>
-                    </a>
-                    <a href="https://x.com/EthanAlgoX" target="_blank" title="Twitter / X" class="social-link twitter">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                            <path
-                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                    </a>
+    <div class="container editorial-shell">
+        <header class="editorial-topbar">
+            <div class="topbar-left">
+                <div class="wordmark-block">
+                    <span class="wordmark-kicker" data-i18n="editorial.kicker">Autonomous Desk</span>
+                    <h1>LLM-TradeBot Studio</h1>
+                    <p data-i18n="editorial.subtitle">Editorial command surface for AI-driven futures operations.</p>
                 </div>
             </div>
-            <div class="status-indicators">
-                <div class="controls">
-                    <!-- Mode Toggle: Test / Live -->
+            <div class="topbar-right">
+                <div class="toolbar-cluster">
                     <div class="mode-toggle-container">
-                        <button id="btn-mode-test" class="mode-toggle-btn active" title="Test Mode - No Real Trading">
-                            🧪 Test
-                        </button>
-                        <button id="btn-mode-live" class="mode-toggle-btn" title="Live Mode - Real Trading">
-                            💰 Live
-                        </button>
+                        <button id="btn-mode-test" class="mode-toggle-btn active" title="Test Mode - No Real Trading" data-i18n="editorial.sim">Sim</button>
+                        <button id="btn-mode-live" class="mode-toggle-btn" title="Live Mode - Real Trading" data-i18n="editorial.live">Live</button>
                     </div>
-
-                    <!-- Settings Button - Elegant Text Style -->
-                    <button id="btn-settings" class="btn-settings-elegant" title="Settings">
-                        <span class="settings-icon">⚙️</span>
-                        <span class="settings-text" data-i18n="btn.settings">Settings</span>
-                    </button>
-
-                    <!-- Backtest Button -->
-                    <a href="/static/backtest.html" class="btn-settings-elegant" title="Backtest"
-                        style="text-decoration: none; margin-left: 10px;">
-                        <span class="settings-icon">🔬</span>
-                        <span class="settings-text" data-i18n="btn.backtest">Backtest</span>
-                    </a>
-
-                    <!-- Logout Button -->
-                    <button id="btn-logout" class="btn-settings-elegant" title="Logout" style="margin-left: 10px;"
-                        onclick="window.logout()">
-                        <span class="settings-icon">🚪</span>
-                        <span class="settings-text" data-i18n="btn.logout">Exit</span>
-                    </button>
-
-                    <!-- Language Toggle Button -->
-                    <button id="btn-language" class="btn-settings-elegant" title="切换语言 / Switch Language"
-                        style="margin-left: 10px;">
-                        <span class="settings-icon">🌐</span>
-                        <span id="lang-text" class="settings-text">中文</span>
-                    </button>
-
-                    <button id="btn-start" class="btn-control start" title="Start Trading"
-                        onclick="if(window.setControl) window.setControl('start');">▶</button>
-                    <button id="btn-pause" class="btn-control pause" title="Pause Trading"
-                        onclick="if(window.setControl) window.setControl('pause');">⏸</button>
-                    <button id="btn-stop" class="btn-control stop" title="Stop System"
-                        onclick="if(window.setControl) window.setControl('stop');">⏹</button>
-
                     <select id="interval-selector" class="interval-selector" title="Cycle Interval">
-                        <option value="0.5">30 sec</option>
-                        <option value="1">1 min</option>
-                        <option value="3" selected>3 min</option>
-                        <option value="5">5 min</option>
-                        <option value="15">15 min</option>
-                        <option value="30">30 min</option>
-                        <option value="60">1 hour</option>
+                        <option value="0.5">30s</option>
+                        <option value="1">1m</option>
+                        <option value="3" selected>3m</option>
+                        <option value="5">5m</option>
+                        <option value="15">15m</option>
+                        <option value="30">30m</option>
+                        <option value="60">1h</option>
                     </select>
+                    <button id="btn-start" class="btn-control start" title="Start Trading"
+                        onclick="if(window.setControl) window.setControl('start');" data-i18n="editorial.run">Run</button>
+                    <button id="btn-pause" class="btn-control pause" title="Pause Trading"
+                        onclick="if(window.setControl) window.setControl('pause');" data-i18n="editorial.hold">Hold</button>
+                    <button id="btn-stop" class="btn-control stop" title="Stop System"
+                        onclick="if(window.setControl) window.setControl('stop');" data-i18n="editorial.reset">Reset</button>
                 </div>
-                <div class="status-item">
-                    <span class="label" data-i18n="header.mode">MODE</span>
-                    <span id="sys-mode" class="value badge">LOADING</span>
-                </div>
-                <div class="status-item">
-                    <span class="label" data-i18n="header.environment">ENVIRONMENT</span>
-                    <span id="sys-env" class="value badge">LOADING</span>
-                </div>
-                <div class="status-item">
-                    <span class="label" data-i18n="header.cycle">CYCLE</span>
-                    <span id="cycle-counter" class="value">#0</span>
-                </div>
-                <div class="status-item">
-                    <span class="label" data-i18n="header.equity">EQUITY</span>
-                    <span id="header-equity" class="value">$0.00</span>
+                <div class="toolbar-cluster secondary">
+                    <button id="btn-settings" class="btn-settings-elegant" title="Settings"><span class="settings-text" data-i18n="btn.settings">Settings</span></button>
+                    <a href="/static/backtest.html" class="btn-settings-elegant deck-link" title="Backtest"><span class="settings-text" data-i18n="btn.backtest">Backtest</span></a>
+                    <button id="btn-view-prompts" class="btn-settings-elegant" type="button" data-i18n="editorial.prompts">Prompts</button>
+                    <button id="btn-language" class="btn-settings-elegant" title="切换语言 / Switch Language"><span id="lang-text" class="settings-text">中文</span></button>
+                    <button id="btn-logout" class="btn-settings-elegant" title="Logout" onclick="window.logout()"><span class="settings-text" data-i18n="btn.logout">Exit</span></button>
                 </div>
             </div>
         </header>
 
-        <!-- Main Grid -->
-        <main class="dashboard-grid">
-            <div class="dashboard-layout hero-layout">
-                <!-- Left Sidebar: Account & Portfolios -->
-                <aside class="sidebar-left">
-                    <section class="row-charts-account">
-                        <div class="glass-panel card live-positions-card">
-                            <div class="card-header-compact">
-                                <h2 data-i18n="section.live_positions">📊 Live Positions</h2>
-                                <span id="position-count-badge" class="badge">0</span>
-                            </div>
-                            <div class="positions-summary">
-                                <div class="summary-item">
-                                    <span class="label" data-i18n="positions.total_unrealized">Total Unrealized
-                                        PnL</span>
-                                    <span id="total-unrealized-pnl" class="value neutral">$0.00</span>
-                                </div>
-                            </div>
-                            <div class="positions-list-container">
-                                <div id="position-details" class="position-details-list">
-                                    <span class="empty-msg">No active positions</span>
-                                </div>
-                            </div>
+        <section class="headline-ribbon">
+            <article class="headline-panel signal">
+                <span class="ribbon-label" data-i18n="editorial.current_pair">Current Pair</span>
+                <div class="ribbon-main">
+                    <strong id="symbol-display-text">--</strong>
+                    <span id="framework-cycle">Cycle #0</span>
+                </div>
+                <p id="current-symbol-display">Pair routing online</p>
+            </article>
+            <article class="headline-panel stat">
+                <span class="ribbon-label" data-i18n="editorial.system_mode">System Mode</span>
+                <strong id="sys-mode" class="value badge">LOADING</strong>
+                <span id="sys-env" class="subvalue badge">LOADING</span>
+            </article>
+            <article class="headline-panel stat">
+                <span class="ribbon-label" data-i18n="editorial.cycle_counter">Cycle Counter</span>
+                <strong id="cycle-counter">#0</strong>
+                <span class="subvalue" data-i18n="editorial.automated_schedule">Automated schedule</span>
+            </article>
+            <article class="headline-panel stat">
+                <span class="ribbon-label" data-i18n="editorial.equity">Equity</span>
+                <strong id="header-equity">$0.00</strong>
+                <span class="subvalue" data-i18n="editorial.live_treasury">Live treasury view</span>
+            </article>
+            <article class="headline-panel stat">
+                <span class="ribbon-label" data-i18n="editorial.model_route">Model Route</span>
+                <div id="llm-info-badge" class="model-badge" style="display:none;">
+                    <span id="llm-provider-text">--</span>
+                    <span>/</span>
+                    <span id="llm-model-text">--</span>
+                </div>
+                <button id="btn-llm-toggle" class="llm-toggle-btn" type="button">LLM: OFF</button>
+            </article>
+        </section>
 
-                            <hr class="sidebar-divider">
-
-                            <!-- Compact Account Stats -->
-                            <div class="account-stats-compact">
-                                <div class="stat-row">
-                                    <span class="label" data-i18n="account.balance">Wallet Balance</span>
-                                    <span id="account-realtime-balance" class="value">$0.00</span>
-                                </div>
-                                <div class="stat-row">
-                                    <span class="label" data-i18n="positions.realized_pnl">Realized PnL</span>
-                                    <span id="acc-pnl" class="value">$0.00</span>
-                                </div>
-                            </div>
-
-                            <hr class="sidebar-divider">
-
-                            <!-- LLM Metrics -->
-                            <div class="account-stats-compact llm-metrics-panel">
-                                <div class="stats-section-title">LLM API</div>
-                                <div class="stat-row">
-                                    <span class="label">Tokens (IN/OUT)</span>
-                                    <span id="llm-metrics-tokens" class="value">--/--</span>
-                                </div>
-                                <div class="stat-row">
-                                    <span class="label">Tokens Total</span>
-                                    <span id="llm-metrics-total" class="value">--</span>
-                                </div>
-                                <div class="stat-row">
-                                    <span class="label">Token Speed</span>
-                                    <span id="llm-metrics-speed" class="value">-- tps</span>
-                                </div>
-                                <div class="stat-row">
-                                    <span class="label">Latency (min/avg/max)</span>
-                                    <span id="llm-metrics-latency" class="value">--/--/-- ms</span>
-                                </div>
-                            </div>
+        <main class="editorial-grid">
+            <aside class="editorial-rail">
+                <section class="paper-card account-sheet">
+                    <div class="sheet-head">
+                        <span class="sheet-kicker" data-i18n="editorial.desk_inputs">Desk Inputs</span>
+                        <h2 data-i18n="editorial.routing_sheet">Routing Sheet</h2>
+                    </div>
+                    <label class="sheet-field">
+                        <span data-i18n="editorial.execution_symbol">Execution Symbol</span>
+                        <select id="symbol-selector" class="focus-select"></select>
+                    </label>
+                    <div class="sheet-metrics">
+                        <div>
+                            <span data-i18n="editorial.wallet">Wallet</span>
+                            <strong id="account-realtime-balance">$0.00</strong>
                         </div>
-                    </section>
-                </aside>
-
-                <!-- Center Hero: Agent Chatroom -->
-                <section class="hero-center row-agent-framework">
-                    <div class="glass-panel card agent-framework-card hero-chatroom-card">
-                        <div class="card-header framework-header">
-                            <div class="framework-title-block">
-                                <h2 class="framework-title">🤖 Agent Chatroom</h2>
-                                <p class="framework-subtitle" data-i18n="framework.subtitle">Strategic Debate & Decision
-                                    Hub</p>
-                            </div>
-                            <div class="framework-controls">
-                                <span id="framework-cycle" class="cycle-badge">Cycle #0</span>
-                                <span id="current-symbol-display" class="current-symbol-badge">
-                                    📊 <span id="symbol-display-text">--</span>
-                                </span>
-                                <div id="llm-info-badge" class="current-symbol-badge"
-                                    style="background: rgba(0, 255, 157, 0.1); border-color: rgba(0, 255, 157, 0.3); display: none;">
-                                    🤖 <span id="llm-provider-text">--</span> (<span id="llm-model-text">--</span>)
-                                </div>
-                                <button id="btn-view-prompts" class="llm-toggle-btn" type="button"
-                                    style="margin-right: 5px;">Agent Config</button>
-                                <button id="btn-llm-toggle" class="llm-toggle-btn" type="button">LLM: OFF</button>
-                            </div>
+                        <div>
+                            <span data-i18n="editorial.realized">Realized</span>
+                            <strong id="acc-pnl">$0.00</strong>
                         </div>
-                        <div class="chatroom-container hero-scroller">
-                            <div id="chatroom-messages" class="chatroom-messages">
-                                <div class="chatroom-empty">
-                                    <div class="icon">💬</div>
-                                    <p data-i18n="framework.chatroom.empty">Initializing neural pathways...</p>
-                                </div>
+                        <div>
+                            <span data-i18n="editorial.open_count">Open Count</span>
+                            <strong id="position-count-badge">0</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="editorial.unrealized">Unrealized</span>
+                            <strong id="total-unrealized-pnl">$0.00</strong>
+                        </div>
+                    </div>
+                    <div class="sheet-metrics mini">
+                        <div>
+                            <span data-i18n="editorial.trades">Trades</span>
+                            <strong id="account-trades-count">--</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="editorial.win_rate">Win Rate</span>
+                            <strong id="account-win-rate">--</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="editorial.pnl_pct">PnL %</span>
+                            <strong id="account-total-pnl-pct">--</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="paper-card chart-sheet">
+                    <div class="sheet-head">
+                        <span class="sheet-kicker" data-i18n="editorial.treasury_curve">Treasury Curve</span>
+                        <h2 data-i18n="editorial.balance_story">Balance Story</h2>
+                    </div>
+                    <div class="chart-shell editorial-chart">
+                        <canvas id="equityChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="paper-card telemetry-sheet llm-metrics-panel">
+                    <div class="sheet-head">
+                        <span class="sheet-kicker" data-i18n="editorial.inference_telemetry">Inference Telemetry</span>
+                        <h2 data-i18n="editorial.model_throughput">Model Throughput</h2>
+                    </div>
+                    <div class="telemetry-list">
+                        <div><span data-i18n="editorial.tokens">Tokens</span><strong id="llm-metrics-tokens">--/--</strong></div>
+                        <div><span data-i18n="editorial.total">Total</span><strong id="llm-metrics-total">--</strong></div>
+                        <div><span data-i18n="editorial.speed">Speed</span><strong id="llm-metrics-speed">-- tps</strong></div>
+                        <div><span data-i18n="editorial.latency">Latency</span><strong id="llm-metrics-latency">--/--/-- ms</strong></div>
+                    </div>
+                </section>
+            </aside>
+
+            <section class="editorial-main">
+                <section class="paper-card narrative-card">
+                    <div class="sheet-head split">
+                        <div>
+                            <span class="sheet-kicker" data-i18n="editorial.reasoning_feed">Reasoning Feed</span>
+                            <h2 data-i18n="editorial.the_narrative">The Narrative</h2>
+                        </div>
+                        <div class="narrative-flags">
+                            <span class="flag-chip primary" data-i18n="editorial.live_stream">Live Stream</span>
+                            <span class="flag-chip" data-i18n="editorial.analyst_notes">Analyst Notes</span>
+                        </div>
+                    </div>
+                    <div class="chatroom-container editorial-feed">
+                        <div id="chatroom-messages" class="chatroom-messages">
+                            <div class="chatroom-empty">
+                                <div class="icon">💬</div>
+                                <p data-i18n="framework.chatroom.empty">Initializing neural pathways...</p>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <!-- Right Sidebar: Performance & Stats -->
-                <aside class="sidebar-right">
-                    <section class="glass-panel card ranking-card">
-                        <h2 data-i18n="section.symbol_ranking">🏆 Ranking</h2>
-                        <div class="ranking-compact-container">
-                            <table id="symbol-ranking-table" class="compact-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Symbol</th>
-                                        <th class="text-right">PnL</th>
-                                        <th class="text-right">Win%</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="symbol-ranking-body">
-                                    <tr>
-                                        <td colspan="4" class="text-center">Loading...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                <section class="paper-card archive-card">
+                    <div class="sheet-head split">
+                        <div>
+                            <span class="sheet-kicker" data-i18n="editorial.decision_history">Decision History</span>
+                            <h2 data-i18n="editorial.archive_table">Archive Table</h2>
                         </div>
-                    </section>
-                </aside>
-            </div> <!-- End hero-layout -->
-
-            <!-- Bottom: Detailed Records -->
-            <div class="bottom-detail-panels">
-                <section class="row-trades">
-                    <div class="glass-panel card trade-table-card">
-                        <div class="section-header-compact">
-                            <h2 data-i18n="section.trades">📜 Trade Records</h2>
-                        </div>
-                        <div class="table-container mini-records">
-                            <table id="trade-table">
-                                <thead>
-                                    <tr>
-                                        <th data-i18n="trade.time">Time</th>
-                                        <th data-i18n="trade.symbol">Symbol</th>
-                                        <th data-i18n="trade.direction">Side</th>
-                                        <th data-i18n="trade.entry">Entry</th>
-                                        <th data-i18n="trade.exit">Exit</th>
-                                        <th data-i18n="trade.pnl">PnL</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
+                        <div class="archive-filters">
+                            <select id="filter-symbol" class="focus-select compact">
+                                <option value="all" data-i18n="filter.all.symbols">All Symbols</option>
+                            </select>
+                            <select id="filter-result" class="focus-select compact">
+                                <option value="all" data-i18n="editorial.all_outcomes">All Outcomes</option>
+                                <option value="long" data-i18n="filter.long">Long</option>
+                                <option value="short" data-i18n="filter.short">Short</option>
+                                <option value="wait" data-i18n="filter.wait">Wait</option>
+                            </select>
                         </div>
                     </div>
+                    <div class="table-container decision-ledger editorial-ledger">
+                        <table id="decision-table" class="decision-ledger-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Symbol</th>
+                                    <th>Action</th>
+                                    <th>Confidence</th>
+                                    <th>Layers</th>
+                                    <th>ADX</th>
+                                    <th>OI</th>
+                                    <th>Regime</th>
+                                    <th>Position</th>
+                                    <th>KDJ</th>
+                                    <th>Trigger</th>
+                                    <th>Prophet</th>
+                                    <th>Bull</th>
+                                    <th>Bear</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </section>
-            </div>
+            </section>
+
+            <aside class="editorial-sidepanel">
+                <section class="paper-card positions-card">
+                    <div class="sheet-head">
+                        <span class="sheet-kicker" data-i18n="editorial.open_book">Open Book</span>
+                        <h2 data-i18n="editorial.positions">Positions</h2>
+                    </div>
+                    <div id="position-details" class="position-details-list">
+                        <span class="empty-msg">No active positions</span>
+                    </div>
+                </section>
+
+                <section class="paper-card ranking-card editorial-ranking">
+                    <div class="sheet-head">
+                        <span class="sheet-kicker" data-i18n="editorial.league_table">League Table</span>
+                        <h2 data-i18n="editorial.symbol_ranking">Symbol Ranking</h2>
+                    </div>
+                    <div id="symbol-ranking-summary" class="summary-banner">Waiting for rank feed...</div>
+                    <div class="ranking-compact-container">
+                        <table id="symbol-ranking-table" class="compact-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Symbol</th>
+                                    <th class="text-right">PnL</th>
+                                    <th class="text-right">Win%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="symbol-ranking-body">
+                                <tr>
+                                    <td colspan="4" class="text-center">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="paper-card console-card">
+                    <div class="sheet-head split">
+                        <div>
+                        <span class="sheet-kicker" data-i18n="editorial.runtime_console">Runtime Console</span>
+                        <h2 data-i18n="editorial.operator_log">Operator Log</h2>
+                        </div>
+                        <button id="log-mode-toggle" class="llm-toggle-btn subtle" type="button">
+                            <span id="log-mode-icon">📋</span>
+                            <span id="log-mode-text">Simplified</span>
+                        </button>
+                    </div>
+                    <div id="logs-container" class="logs-console editorial-console"></div>
+                </section>
+            </aside>
         </main>
-    </div> <!-- End container -->
+
+        <section class="editorial-footer-grid">
+            <section class="paper-card trade-sheet">
+                <div class="sheet-head">
+                    <span class="sheet-kicker" data-i18n="editorial.executed_orders">Executed Orders</span>
+                    <h2 data-i18n="section.trades">Trade Records</h2>
+                </div>
+                <div class="table-container mini-records">
+                    <table id="trade-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="trade.time">Time</th>
+                                <th data-i18n="trade.symbol">Symbol</th>
+                                <th data-i18n="trade.direction">Side</th>
+                                <th data-i18n="trade.entry">Entry</th>
+                                <th data-i18n="trade.exit">Exit</th>
+                                <th data-i18n="trade.pnl">PnL</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </div>
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content settings-modal">
             <div class="modal-header">
-                <h3>⚙️ Settings</h3>
+                <h3 data-i18n="settings.title">⚙️ Settings</h3>
                 <button id="close-settings" class="btn-close">×</button>
             </div>
 
             <div class="settings-tabs">
-                <button class="tab-btn active" data-tab="tab-keys">API Keys</button>
-                <button class="tab-btn" data-tab="tab-accounts">Accounts</button>
+                <button class="tab-btn active" data-tab="tab-keys" data-i18n="settings.tab.keys">API Keys</button>
+                <button class="tab-btn" data-tab="tab-accounts" data-i18n="settings.tab.accounts">Accounts</button>
             </div>
 
             <div class="settings-body">
                 <!-- Tab: API Keys -->
                 <div id="tab-keys" class="tab-pane active">
                     <div class="form-group">
-                        <label>Trading Mode</label>
+                        <label data-i18n="config.mode">Trading Mode</label>
                         <select id="cfg-run-mode" class="form-control" style="border-color: #ecc94b;">
-                            <option value="test">Test Mode (Paper Trading)</option>
-                            <option value="live">Live Trading (Real Money)</option>
+                            <option value="test" data-i18n="config.mode.test">Test Mode (Paper Trading)</option>
+                            <option value="live" data-i18n="config.mode.live">Live Trading (Real Money)</option>
                         </select>
-                        <p style="color: #a0aec0; font-size: 0.8em; margin-top: 4px;">Requires restart to apply change.
+                        <p data-i18n="editorial.restart_apply_change" style="color: #a0aec0; font-size: 0.8em; margin-top: 4px;">Requires restart to apply change.
                         </p>
                     </div>
 
@@ -442,12 +479,12 @@
             </div>
 
             <div class="modal-footer">
-                <button id="btn-save-settings" class="btn btn-primary">Save Changes</button>
+                <button id="btn-save-settings" class="btn btn-primary" data-i18n="settings.save">Save Changes</button>
             </div>
         </div>
     </div>
 
-    <script src="/static/app.js?v=20260222_0130"></script>
+    <script src="/static/app.js?v=20260319_1515"></script>
     <script>
         // Inline script removed (logic handled in app.js).
     </script>

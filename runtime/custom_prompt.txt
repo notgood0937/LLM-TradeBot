@@ -1,0 +1,138 @@
+# Go Migration
+
+This repository is still Python-first. The Go code added here is the migration foundation for the decision path, not a full feature-complete port yet.
+
+## Current Scope
+
+- `cmd/tradebot`
+  - CLI entrypoint that loads `.env`, reads a JSON decision context, renders market context, calls LLM, and prints the final decision.
+- `cmd/tradebotd`
+  - HTTP API server for market data, account lookup, decision requests, and a minimal full pipeline run.
+- `internal/config`
+  - Loads `.env` and normalizes LLM / Telegram settings.
+- `internal/binance`
+  - Binance Futures REST client for klines, price, account, and position.
+  - Supports leverage change, market order placement, conditional stop-loss / take-profit orders, and cancel-all-open-orders.
+- `internal/quant`
+  - Basic trend / oscillator / sentiment analysis compatible with the Python decision context shape.
+  - Includes baseline regime inference and semantic summaries for trend/setup/trigger/multi-period style outputs.
+- `internal/risk`
+  - Risk audit layer with leverage, position-size, stop-loss range, and risk-reward checks.
+- `internal/execution`
+  - Execution engine for open/close actions using Binance Futures REST.
+- `internal/selector`
+  - Lightweight AUTO1-style momentum selector.
+- `internal/state`
+  - Runtime shared state with JSON persistence.
+- `internal/llm`
+  - OpenAI-compatible chat client usable with DeepSeek and similar providers.
+  - Bull perspective, bear perspective, and final decision flow.
+- `internal/telegram`
+  - Async Telegram notifier.
+- `internal/app`
+  - Small orchestration layer mirroring the Python decision pipeline shape.
+
+## Run
+
+```bash
+go run ./cmd/tradebot -context examples/decision_context.json -print-prompt
+```
+
+```bash
+go run ./cmd/tradebotd
+```
+
+Or use:
+
+```bash
+chmod +x start_go.sh
+./start_go.sh
+```
+
+HTTP endpoints:
+
+```bash
+GET  /api/health
+GET  /api/status
+POST /api/control
+GET  /api/config
+POST /api/config
+POST /api/state/save
+POST /api/state/load
+GET  /api/market/klines?symbol=BTCUSDT&interval=5m
+GET  /api/account
+POST /api/selector/run
+POST /api/decision
+POST /api/pipeline/run
+POST /api/execute
+```
+
+Current dashboard compatibility status:
+
+- Static pages are served from the Go backend.
+- `/`, `/login`, and `/static/style.css` are verified working.
+- Core dashboard polling and settings endpoints now exist in Go.
+- Field-level parity is still in progress.
+
+Required environment variables:
+
+```bash
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your_key
+LLM_MODEL=deepseek-chat
+LLM_BASE_URL=https://api.deepseek.com
+
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+```
+
+## Mapping From Python
+
+- Python `main.py` decision stage
+  - mapped into `internal/app/service.go`
+- Python `src/strategy/llm_engine.py`
+  - mapped into `internal/llm/engine.go`
+- Python `src/api/binance_client.py`
+  - mapped into `internal/binance/client.go`
+- Python `src/agents/quant_analyst_agent.py`
+  - partially mapped into `internal/quant/analyzer.go`
+- Python `src/agents/risk_audit_agent.py`
+  - partially mapped into `internal/risk/audit.go`
+- Python `src/execution/engine.py`
+  - partially mapped into `internal/execution/engine.go`
+- Python `src/agents/symbol_selector_agent.py`
+  - partially mapped into `internal/selector/selector.go`
+- Python `src/server/state.py`
+  - partially mapped into `internal/state/state.go`
+- Python `src/server/app.py`
+  - minimally mapped into `internal/server/http.go`
+- Python Telegram notifier
+  - mapped into `internal/telegram/notifier.go`
+
+## Parity Status
+
+- Implemented now
+  - Config loading
+  - Binance REST market/account primitives
+  - Binance execution primitives
+  - Basic quant analysis plus regime / semantic summaries
+  - Bull / bear / final LLM decision flow
+  - Baseline execution engine
+  - Baseline AUTO1 selector
+  - Runtime shared state persistence
+  - Telegram notifications
+  - Broader HTTP API backend
+- Not yet feature-complete
+  - Web dashboard frontend port
+  - Full Python quant and multi-agent feature parity
+  - Full risk audit parity
+  - Full execution parity and exchange edge cases
+  - Backtest / selector / runtime hot reload / persistence features
+
+## Next Migration Steps
+
+1. Port exact Python quant output schema and semantic agent context.
+2. Port dashboard-specific API contracts beyond the current baseline endpoints.
+3. Add backtest, richer selector logic, and runtime hot reload parity.
+4. Replace Python backend after response-shape verification.

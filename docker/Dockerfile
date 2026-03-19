@@ -1,35 +1,22 @@
-FROM python:3.11-slim
+FROM golang:1.22-bookworm AS builder
 
-# Set working directory
 WORKDIR /app
+COPY go.mod ./
+COPY cmd ./cmd
+COPY internal ./internal
+COPY web ./web
+RUN go build -o /out/tradebotd ./cmd/tradebotd
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+FROM debian:bookworm-slim
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+WORKDIR /app
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /out/tradebotd /app/tradebotd
+COPY web /app/web
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
-COPY . .
-
-# Create necessary directories
-RUN mkdir -p data logs models
-
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000')" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8000/api/health || exit 1
 
-# Default command
-CMD ["python", "main.py", "--test", "--mode", "continuous"]
+CMD ["./tradebotd"]
