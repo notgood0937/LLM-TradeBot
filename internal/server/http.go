@@ -57,7 +57,7 @@ func New(cfg config.Config) *Server {
 	return &Server{
 		cfg:           cfg,
 		binance:       client,
-		quant:         quant.New(),
+		quant:         quant.New(&cfg.Trading.Strategy),
 		decision:      app.NewDecisionService(cfg),
 		risk:          risk.New(),
 		exec:          execution.New(client, cfg),
@@ -267,6 +267,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			"trading": map[string]any{
 				"run_mode": ternary(s.state.Snapshot()["is_test_mode"] == true, "test", "live"),
 			},
+			"strategy": s.cfg.Trading.Strategy,
 		})
 		return
 	}
@@ -301,6 +302,10 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		if v, ok := tradingCfg["run_mode"].(string); ok {
 			s.state.SetMode(s.state.Snapshot()["is_running"] == true, fmt.Sprint(s.state.Snapshot()["execution_mode"]), v != "live")
 		}
+	}
+	if strategyCfg, ok := req["strategy"].(map[string]any); ok {
+		b, _ := json.Marshal(strategyCfg)
+		_ = json.Unmarshal(b, &s.cfg.Trading.Strategy)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"status": "success"})
 }
@@ -639,22 +644,13 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "web/index.html")
 		return
 	}
-	if r.URL.Path == "/login" {
-		http.ServeFile(w, r, "web/login.html")
-		return
-	}
+	
 	path := filepath.Clean(r.URL.Path)
-	if path == "" || path == "." || path == "/" {
-		http.NotFound(w, r)
-		return
-	}
-	if filepath.Dir(path) == "/static" {
-		path = "/" + filepath.Base(path)
-	}
-	base := filepath.Base(path)
-	full := filepath.Join("web", base)
-	if _, err := os.Stat(full); err != nil {
-		http.NotFound(w, r)
+	full := filepath.Join("web", strings.TrimPrefix(path, "/"))
+	
+	if info, err := os.Stat(full); err != nil || info.IsDir() {
+		// SPA fallback to index.html for Vue Router
+		http.ServeFile(w, r, "web/index.html")
 		return
 	}
 	http.ServeFile(w, r, full)

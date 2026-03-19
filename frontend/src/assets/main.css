@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-nofx-bg text-gray-200 font-mono antialiased min-h-screen overflow-y-auto selection:bg-nofx-gold/30 selection:text-white;
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(21, 25, 33, 0.8) 0%, #05070A 60%),
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(240, 185, 11, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-panel-bg backdrop-blur-md border border-white/5 rounded-lg shadow-lg transition-all duration-300;
+  }
+  .glass-panel:hover {
+    @apply border-nofx-gold/40 shadow-nofx-gold/20 shadow-2xl;
+  }
+  .crt-overlay {
+    @apply fixed inset-0 pointer-events-none z-50 opacity-30;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.08) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+    background-size: 100% 2px, 3px 100%;
+  }
+  .tech-btn {
+    @apply px-4 py-2 flex items-center justify-center gap-2 border border-nofx-gold/30 rounded-full bg-nofx-gold/10 text-gray-400 text-sm font-medium transition-all duration-300 hover:border-nofx-gold hover:bg-nofx-gold/20 hover:text-nofx-gold hover:shadow-[0_4px_20px_rgba(240,185,11,0.2)];
+  }
+}

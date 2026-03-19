@@ -6,9 +6,12 @@ import (
 	"strings"
 
 	"llmtradebot/internal/binance"
+	"llmtradebot/internal/config"
 )
 
-type Analyzer struct{}
+type Analyzer struct {
+	cfg *config.StrategyConfig
+}
 
 type Analysis struct {
 	Trend         map[string]any `json:"trend"`
@@ -19,18 +22,18 @@ type Analysis struct {
 	Semantic      map[string]any `json:"semantic"`
 }
 
-func New() *Analyzer {
-	return &Analyzer{}
+func New(cfg *config.StrategyConfig) *Analyzer {
+	return &Analyzer{cfg: cfg}
 }
 
 func (a *Analyzer) Analyze(tf1h, tf15m, tf5m []binance.Candle) Analysis {
-	trend1h, trend1hDetails := trendScore(tf1h)
-	trend15m, trend15mDetails := trendScore(tf15m)
-	trend5m, trend5mDetails := trendScore(tf5m)
+	trend1h, trend1hDetails := a.trendScore(tf1h)
+	trend15m, trend15mDetails := a.trendScore(tf15m)
+	trend5m, trend5mDetails := a.trendScore(tf5m)
 
-	osc1h, osc1hDetails := oscillatorScore(tf1h)
-	osc15m, osc15mDetails := oscillatorScore(tf15m)
-	osc5m, osc5mDetails := oscillatorScore(tf5m)
+	osc1h, osc1hDetails := a.oscillatorScore(tf1h)
+	osc15m, osc15mDetails := a.oscillatorScore(tf15m)
+	osc5m, osc5mDetails := a.oscillatorScore(tf5m)
 
 	sentimentScore := 0.0
 	if len(tf5m) >= 20 {
@@ -99,13 +102,13 @@ func (a *Analyzer) Analyze(tf1h, tf15m, tf5m []binance.Candle) Analysis {
 	}
 }
 
-func trendScore(c []binance.Candle) (float64, map[string]any) {
-	if len(c) < 60 {
+func (a *Analyzer) trendScore(c []binance.Candle) (float64, map[string]any) {
+	if len(c) < a.cfg.EmaLongPeriod {
 		return 0, map[string]any{}
 	}
 	closeSeries := closes(c)
-	ema20 := ema(closeSeries, 20)
-	ema60 := ema(closeSeries, 60)
+	ema20 := ema(closeSeries, a.cfg.EmaShortPeriod)
+	ema60 := ema(closeSeries, a.cfg.EmaLongPeriod)
 	curr := closeSeries[len(closeSeries)-1]
 	e20 := ema20[len(ema20)-1]
 	e60 := ema60[len(ema60)-1]
@@ -134,25 +137,25 @@ func trendScore(c []binance.Candle) (float64, map[string]any) {
 	}
 }
 
-func oscillatorScore(c []binance.Candle) (float64, map[string]any) {
+func (a *Analyzer) oscillatorScore(c []binance.Candle) (float64, map[string]any) {
 	if len(c) < 30 {
 		return 0, map[string]any{}
 	}
 	closeSeries := closes(c)
 	highSeries := highs(c)
 	lowSeries := lows(c)
-	rsiValue := rsi(closeSeries, 14)
-	jValue := kdjJ(highSeries, lowSeries, closeSeries, 9)
+	rsiValue := rsi(closeSeries, a.cfg.RsiPeriod)
+	jValue := kdjJ(highSeries, lowSeries, closeSeries, a.cfg.KdjPeriod)
 
 	score := 0.0
-	if rsiValue < 30 {
+	if rsiValue < a.cfg.RsiOversold {
 		score += 40
-	} else if rsiValue > 70 {
+	} else if rsiValue > a.cfg.RsiOverbought {
 		score -= 40
 	}
-	if jValue < 20 {
+	if jValue < a.cfg.KdjOversold {
 		score += 30
-	} else if jValue > 80 {
+	} else if jValue > a.cfg.KdjOverbought {
 		score -= 30
 	}
 	return score, map[string]any{

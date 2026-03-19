@@ -35,6 +35,18 @@ type TradingConfig struct {
 	Symbols  []string
 	Primary  string
 	Leverage int
+	Strategy StrategyConfig
+}
+
+type StrategyConfig struct {
+	EmaShortPeriod int     `json:"ema_short_period"`
+	EmaLongPeriod  int     `json:"ema_long_period"`
+	RsiPeriod      int     `json:"rsi_period"`
+	RsiOverbought  float64 `json:"rsi_overbought"`
+	RsiOversold    float64 `json:"rsi_oversold"`
+	KdjPeriod      int     `json:"kdj_period"`
+	KdjOverbought  float64 `json:"kdj_overbought"`
+	KdjOversold    float64 `json:"kdj_oversold"`
 }
 
 type RiskConfig struct {
@@ -97,6 +109,16 @@ func Load(dotEnvPath string) (Config, error) {
 			Symbols:  parseCSV(firstNonEmpty(os.Getenv("TRADING_SYMBOLS"), "BTCUSDT")),
 			Primary:  firstNonEmpty(os.Getenv("TRADING_PRIMARY_SYMBOL"), "BTCUSDT"),
 			Leverage: int(parseFloatDefault(firstNonEmpty(os.Getenv("LEVERAGE"), "5"), 5)),
+			Strategy: StrategyConfig{
+				EmaShortPeriod: 20,
+				EmaLongPeriod:  60,
+				RsiPeriod:      14,
+				RsiOverbought:  70,
+				RsiOversold:    30,
+				KdjPeriod:      9,
+				KdjOverbought:  80,
+				KdjOversold:    20,
+			},
 		},
 		Risk: RiskConfig{
 			MaxRiskPerTradePct:  parseFloatDefault(firstNonEmpty(os.Getenv("MAX_RISK_PER_TRADE_PCT"), "1.5"), 1.5),
